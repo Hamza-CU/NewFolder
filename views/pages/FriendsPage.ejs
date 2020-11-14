@@ -1,0 +1,107 @@
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+    <style>
+        body {
+            background-color: rgb(51, 51, 51);
+            font-family: 'Ubuntu';
+            font-size: 22px;
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 160px;
+            position: fixed;
+            z-index: 1;
+            top: 50px;
+            left: 0;
+            background-color: rgb(38, 38, 38);
+            overflow-x: hidden;
+            padding-top: 0px;
+        }
+
+        .toptext {
+            padding-left: 160px;
+        }
+        .friendSearch {
+          padding-left: 160px;
+        }
+
+        .banner {
+            text-align: center;
+            color: white;
+        }
+
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            width: 200px;
+            background-color: #f1f1f1;
+        }
+
+        li a {
+            display: block;
+            color: #000;
+            padding: 8px 16px;
+            text-decoration: none;
+        }
+
+        /* Change the link color on hover */
+
+        li a:hover {
+            background-color: #555;
+            color: white;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            width: 70%;
+            margin-left: 15%;
+            margin-right: 15%;
+        }
+
+        th,
+        td {
+            padding: 5px;
+            text-align: left;
+        }
+    </style>
+    <title>Connect 4</title>
+</head>
+<div class="banner">
+    <h1>Connect 4 Game</h1>
+</div>
+<div class="toptext">
+    <p style="color:white;">Friends List <%= username %></p>
+</div>
+<form class="friendSearch" method="POST" action="/friendSearch?currUsers=a">
+  <input type="text" id="search" placeholder="Search User" name="search">
+  <button type="submit" id="addFriend">Add</button>
+</form>
+<div class="sidebar">
+    <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/profile">Profile</a></li>
+        <li><a href="/friends">Friends</a></li>
+        <li><a href="/spectate">Spectate</a></li>
+        <form action="/logout?_method=DELETE" method="POST">
+          <button type="submit">Log Out</button>
+        </form>
+    </ul>
+</div>
+<div class="Friends" style="text-align:center;">
+    <table style="width:50%">
+        <tr>
+            <th>Friends</th>
+            <th>Challenge</th>
+        </tr>
+        <tr>
+            <td><%= friends %></td>
+            <td><button action="button">Challenge</button></td>
+        </tr>
+    </table>
+</div>
