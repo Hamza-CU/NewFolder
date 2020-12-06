@@ -1,5 +1,7 @@
 <html>
 <head>
+    <script defer src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script defer src="javascripts/MainPage.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
     <style>
         body {
@@ -66,6 +68,21 @@
             transition: .5s;
         }
 
+        .gameroom-container {
+            position: absolute;
+            top: 50rem;
+            left: 50%;
+            width: 150px;
+            height: 30px;
+            text-align: center;
+            padding: 0.3rem;
+            border: 1px solid black;
+            background: #ffffff;
+            cursor: pointer;
+            box-shadow: 6px 5px #888888;
+            transition: .5s;
+        }
+
         ul {
             list-style-type: none;
             margin: 0;
@@ -87,25 +104,6 @@
             background-color: #555;
             color: white;
         }
-
-        /*@media only screen and (min-width: 1200px) {
-            .sidebar ul {
-                position: initial;
-                width: fit-content;
-            }
-            .sidebar ul li {
-                display: inline-block;
-            }
-            .sidebar ul li a {
-                font-size: 1.3rem;
-            }
-            .sidebar {
-                flex-basis: 20%;
-                margin: 1.5;
-                height: 100%;
-                max-height: 100%;
-            }
-        }*/
     </style>
     <title>Connect 4</title>
 </head>
@@ -173,7 +171,9 @@
         </tr>
     </table>
 </div>
-<div class="findmatch">Find Match</div>
+<form action="/logout?_method=DELETE" method="POST">
+      <button type="submit">Find Match</button>
+</form>
 <div class="sidebar">
     <ul>
         <li><a href="/">Home</a></li>
@@ -185,6 +185,13 @@
       <button type="submit">Log Out</button>
     </form>
 </div>
+<div class="gameroom-container">
+  <% Object.keys(lobbies).forEach(lobby => { %>
+    <div><%= lobby %></div>
+    <a href="/<%= lobby %>">Join</a>
+  <% }) %>
+</div>
+
 <script>
 
   //const matchButton = document.querySelector('.findmatch');

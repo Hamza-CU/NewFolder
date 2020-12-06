@@ -2,11 +2,12 @@ if(process.env.NODE_ENV !== 'production') {
     require('dotenv').config()
 }
 
-const express = require('express');
+var express = require('express');
 const bcrypt = require('bcrypt');
 const app = express();
 const session = require('express-session');
-//const MemoryStore = require('memorystore')(session);
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
 const passport = require('passport');
 const flash = require('express-flash');
 const Override = require('method-override');
@@ -18,13 +19,14 @@ initializePassport(
 	id => users.find(user => user.id === id)
 );
 
+server.listen(3000);
 
 // Put the users in here
 const users = [
   {
-  	"username":"adasda",
-    "email":"sadsad@sdasda",
-  	"password":"asdad",
+  	"username":"abc",
+    "email":"abc@abc",
+  	"password":"abc",
   	"friends":[],
   	"status":"offline",
   	"private":false,
@@ -37,17 +39,29 @@ const users = [
   }
 ]
 
+const lobbies = { 0: { users:{}}};
+
+// Put games as objects here
+const games = [
+  {
+    "gameID": 0,
+    "moves": [],
+    "lobbyStatus": "private",
+    "player1": "",
+    "player2": "",
+    "spectators": [],
+    "winner": "",
+    "currentTurn": "user1",
+    "messageHist": []
+  }
+]
+
+app.set('view engine', 'ejs');
 app.use(express.static('public'))
 app.use(express.static('NewFolder'))
 app.use(express.static('views'))
+app.use(express.urlencoded({extended: true}));
 
-//app.set('views', './');
-app.set('view engine', 'ejs');
-
-//app.use(express.cookieParser('process.env.SESSION_SECRET'));
-//app.use(express.cookieSession());
-
-app.use(express.urlencoded({extended: false}));
 app.use(flash());
 app.use(session({
 	secret: 'testsecret',
@@ -60,14 +74,9 @@ app.use(passport.session())
 
 app.use(Override('_method'))
 
-/*app.use('/', function(req, res, next) {
-	console.log(req.session)*
-	next()
-})*/
-
 // Render our web pages
 app.get('/', checkAuthenticated, (req, res) => {
-	res.render('pages/MainPage');
+	res.render('pages/MainPage', {lobbies: lobbies});
 });
 app.get('/login', checkNotAuthenticated, (req, res) => {
 	res.render('pages/LoginPage');
@@ -84,6 +93,28 @@ app.get('/spectate', checkAuthenticated, (req, res) => {
 app.get('/profile', checkAuthenticated, (req, res) => {
 	res.render('pages/Profile', { username: req.user.username, totalWins: req.user.totalWin,
   totalPlayed: req.user.totalPlayed, totalDraw: req.user.totalDraw, totalLoss: req.user.totalLoss, private: req.user.private});
+});
+app.get('/:lobby', checkAuthenticated, (req, res) => {
+  res.render('pages/game', { lobbyID: req.params.lobby, username: req.user.username});
+});
+
+io.on('connection', socket => {
+  socket.on('user-joined', (lobby, username) => {
+    console.log(username);
+    socket.join(lobby);
+    lobbies[lobby].users[socket.id] = username;
+    socket.to(lobby).broadcast.emit('user-connected', username);
+  });
+  socket.on('send-message', (lobbyID, message) => {
+    console.log(message);
+    socket.to(lobbyID).broadcast.emit('chat-message', { message: message, username: lobbies[lobbyID].users[socket.id] })
+  });
+  socket.on('disconnect', () => {
+    getUserLobbies(socket).forEach(lobby => {
+      socket.to(lobby).broadcast.emit('user-disconnected', lobbies[lobby].users[socket.id])
+      delete lobbies[lobby].users[socket.id]
+    })
+  })
 });
 
 app.post('/register', checkNotAuthenticated, async (req, res) => {
@@ -105,7 +136,7 @@ app.post('/register', checkNotAuthenticated, async (req, res) => {
         totalDraw: 0
 	    })
 	    res.redirect('/login')
-	  } catch (e){ //error here
+	  } catch (e){
 	    res.redirect('/register')
 	  }
 	})
@@ -116,10 +147,8 @@ app.post('/login', passport.authenticate('local', {
 	failureFlash: true
 }))
 
-//
 app.post('/friendSearch', async (res, req) => {
     var username = users.find(user => user.username === req.search)
-    //var currentuser = req.user.username
 
     for(var i in users){
       if(users[i] == req.query['currUsers']){
@@ -127,19 +156,11 @@ app.post('/friendSearch', async (res, req) => {
         console.log(users[i]);
       }
     }
-
-
-    //req.user.friends.push(username);
-    //res.redirect('/friends');
 })
-
-//app.get('/', checkAuthenticated, (req, res) => {
-//  res.render('Profile.ejs', { name: req.user.name })
-//})
 
 app.delete('/logout', (req, res) => {
 	req.logOut()
-	res.redirect('/login')
+	res.redirect('/login');
 })
 
 function checkAuthenticated(req, res, next) {
@@ -155,11 +176,16 @@ function checkNotAuthenticated(req, res, next) {
   }
   next();
 }
-//app.use('/public/javascripts',express.static(__dirname + "NewFolder/public/javascripts/MainPage.js"))
-// Render the functions
 
-//app.post('/LoginPage', LogIn);
+function getUserLobbies(socket) {
+  return Object.entries(lobbies).reduce((names, [name, lobby]) => {
+    if (lobbies.users[socket.id] != null) {
+      names.push(name)
+      return names
+    }
+
+  }, [])
+}
 
 //Server listens on port 3000
-app.listen(3000);
 console.log('Server running at http://127.0.0.1:3000/');
